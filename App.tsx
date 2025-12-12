@@ -3,30 +3,51 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import LinkCreator from './components/LinkCreator';
 import LinkLibrary from './components/LinkLibrary';
+import Login from './components/Login';
 import { ViewState, VideoLinkData } from './types';
-import { Menu } from 'lucide-react';
+import { Menu, Loader2 } from 'lucide-react';
+import { useAuth } from './context/AuthContext';
 
 const App: React.FC = () => {
+  const { user, isLoading: authLoading } = useAuth();
   const [currentView, setCurrentView] = useState<ViewState>('dashboard');
   const [links, setLinks] = useState<VideoLinkData[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  // Load from local storage on mount
+  // Load user-specific data when user changes
   useEffect(() => {
-    const saved = localStorage.getItem('utm_app_links');
-    if (saved) {
-      try {
-        setLinks(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse saved links", e);
-      }
+    if (user) {
+      // Simulate fetching from "GitHub Base" (Database)
+      setIsSyncing(true);
+      const userKey = `utm_app_links_${user.id}`;
+      const saved = localStorage.getItem(userKey);
+      
+      setTimeout(() => {
+          if (saved) {
+            try {
+              setLinks(JSON.parse(saved));
+            } catch (e) {
+              console.error("Failed to parse saved links", e);
+              setLinks([]);
+            }
+          } else {
+            setLinks([]);
+          }
+          setIsSyncing(false);
+      }, 800); // Simulate network fetch time
+    } else {
+        setLinks([]);
     }
-  }, []);
+  }, [user]);
 
-  // Save to local storage whenever links change
+  // Save to "GitHub Base" (Local Storage with User Key)
   useEffect(() => {
-    localStorage.setItem('utm_app_links', JSON.stringify(links));
-  }, [links]);
+    if (user && !isSyncing) {
+      const userKey = `utm_app_links_${user.id}`;
+      localStorage.setItem(userKey, JSON.stringify(links));
+    }
+  }, [links, user, isSyncing]);
 
   const handleSaveLink = (newLink: VideoLinkData) => {
     setLinks(prev => [newLink, ...prev]);
@@ -38,6 +59,18 @@ const App: React.FC = () => {
         setLinks(prev => prev.filter(l => l.id !== id));
       }
   };
+
+  if (authLoading) {
+     return (
+         <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+             <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+         </div>
+     )
+  }
+
+  if (!user) {
+    return <Login />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 flex font-sans text-slate-50 selection:bg-indigo-500 selection:text-white">
@@ -71,7 +104,15 @@ const App: React.FC = () => {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 overflow-y-auto h-screen">
+      <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 overflow-y-auto h-screen relative">
+        
+        {/* Sync Indicator */}
+        {isSyncing && (
+            <div className="absolute top-4 right-4 bg-slate-800 text-xs text-indigo-400 px-3 py-1 rounded-full border border-indigo-500/20 flex items-center shadow-lg z-20">
+                <Loader2 className="w-3 h-3 mr-2 animate-spin" /> Syncing with GitHub...
+            </div>
+        )}
+
         <div className="max-w-6xl mx-auto">
           
           {currentView === 'dashboard' && <Dashboard data={links} />}

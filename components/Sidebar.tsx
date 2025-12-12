@@ -1,6 +1,7 @@
 import React from 'react';
-import { LayoutDashboard, PlusCircle, ListVideo, Link2 } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, ListVideo, Link2, LogOut } from 'lucide-react';
 import { ViewState } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 interface SidebarProps {
   currentView: ViewState;
@@ -8,6 +9,8 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView }) => {
+  const { user, logout } = useAuth();
+  
   const navItems: { id: ViewState; label: string; icon: React.ElementType }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'create', label: 'Create Link', icon: PlusCircle },
@@ -44,10 +47,30 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView }) => {
         ))}
       </nav>
 
-      <div className="p-6 border-t border-slate-800">
-        <div className="bg-slate-800/50 rounded-lg p-4">
-          <p className="text-xs text-slate-400 mb-1">Total Links Created</p>
-          <p className="text-2xl font-bold text-indigo-400">Video Pro</p>
+      {/* User Profile Section */}
+      <div className="p-4 border-t border-slate-800">
+        <div className="bg-slate-800/50 rounded-xl p-3 flex items-center justify-between group hover:bg-slate-800 transition-colors">
+          <div className="flex items-center space-x-3 overflow-hidden">
+            {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.name} className="w-8 h-8 rounded-full border border-slate-600" />
+            ) : (
+                <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-xs font-bold">
+                    {user?.name.charAt(0)}
+                </div>
+            )}
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-medium text-white truncate">{user?.name}</span>
+              <span className="text-[10px] text-slate-400 truncate">GitHub Connected</span>
+            </div>
+          </div>
+          
+          <button 
+            onClick={logout}
+            className="text-slate-500 hover:text-red-400 transition-colors p-1"
+            title="Disconnect"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </aside>

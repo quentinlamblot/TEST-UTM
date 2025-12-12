@@ -24,3 +24,18 @@ export interface AiSuggestion {
   campaign: string;
   reasoning?: string;
 }
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string;
+  provider: 'github';
+}
+
+export interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  loginWithGithub: () => Promise<void>;
+  logout: () => void;
+}
